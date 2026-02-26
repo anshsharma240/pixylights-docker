@@ -1,15 +1,16 @@
-name: Pixylights Multi-Platform Builder
+name: Pixylights Docker Builder
 
 on:
   push:
 
 jobs:
-  linux_builds:
-    name: Linux Builds
-    runs-on: ubuntu-22.04
+  DevelopmentDockerBuilder:
+    name: ${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
+    runs-on: ${{ startsWith(matrix.architecture, 'arm') && 'ubuntu-24.04' || 'ubuntu-24.04' }}
     permissions:
       packages: write
       contents: read
+
     strategy:
       fail-fast: false
       matrix:
@@ -34,10 +35,10 @@ jobs:
             architecture: amd64
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU for ARM
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Login to GitHub Container Registry
@@ -47,30 +48,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PIXYLIGHTS_TOKEN }}
 
-      - name: Configure Git for private repo
-        run: |
-          git config --global url."https://${{ secrets.PIXYLIGHTS_TOKEN }}:@github.com/".insteadOf "https://github.com/"
-
-      - name: Show build info
-        run: echo "Building Pixylights Linux image for ${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}"
-
-      - name: Prepare Docker source
+      - name: Prepare docker source
         shell: bash
         run: |
-          export DEBIAN_FRONTEND=noninteractive
-
-          if [[ "${{ matrix.architecture }}" == "arm64" ]] || [[ "${{ matrix.architecture }}" == "armhf" ]]; then
-              FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}
+          if [[ "${{ matrix.architecture }}" == "arm64" ]]; then
+            FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}
+          elif [[ "${{ matrix.architecture }}" == "armhf" ]]; then
+            FINAL_DOCKER_SOURCE=balenalib/raspberry-pi:${{ matrix.distroVersion }}
           else
-              FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}
+            FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}
           fi
 
           if [[ "${{ matrix.distroName }}" == fedora ]]; then
-              DOCKER_TOOL=buildFedora
+            DOCKER_TOOL=buildFedora
           elif [[ "${{ matrix.distroName }}" == archlinux ]]; then
-              DOCKER_TOOL=buildArch
+            DOCKER_TOOL=buildArch
           else
-              DOCKER_TOOL=buildDebian
+            DOCKER_TOOL=buildDebian
           fi
 
           echo "FINAL_DOCKER_SOURCE=$FINAL_DOCKER_SOURCE" >> $GITHUB_ENV
@@ -79,37 +73,21 @@ jobs:
       - name: Make build scripts executable
         run: chmod +x buildDebian buildFedora buildArch
 
-      - name: Build & push Docker container
+      - name: Build & push docker container
         env:
           PIXY_DOCKER_TAG: ghcr.io/pixylights-dev/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
         run: |
           docker build \
-            --pull \
             -t ${{ env.PIXY_DOCKER_TAG }} \
             --platform linux/${{ matrix.architecture }} \
+            --label maintainer="Pixylights" \
+            --label org.opencontainers.image.title="${{ matrix.distroName }} (${{ matrix.distroVersion }})" \
+            --label org.opencontainers.image.description="Pixylights build environment" \
+            --label org.opencontainers.image.url="https://pixylights.eu" \
+            --label org.opencontainers.image.source="${{ github.server_url }}/${{ github.repository }}" \
+            --label org.opencontainers.image.vendor="Pixylights" \
+            --label org.opencontainers.image.licenses="MIT" \
             --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
             -f ${{ env.DOCKER_TOOL }} .
 
           docker push ${{ env.PIXY_DOCKER_TAG }}
-
-  mac_builds:
-    name: macOS Builds
-    runs-on: macos-14
-    strategy:
-      fail-fast: false
-      matrix:
-        architecture: [x86_64, arm64]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Show build info
-        run: echo "Building Pixylights macOS installer for ${{ matrix.architecture }}"
-
-      - name: Build macOS installer
-        shell: bash
-        run: |
-          ARCH="${{ matrix.architecture }}"
-          export HOMEBREW_NO_AUTO_UPDATE=1
-          ./buildMac.sh "$ARCH"
