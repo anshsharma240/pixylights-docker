@@ -5,7 +5,7 @@ on:
 
 jobs:
   linux_builds:
-    name: Linux: ${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
+    name: Linux Builds
     runs-on: ubuntu-22.04
     permissions:
       packages: write
@@ -45,13 +45,13 @@ jobs:
             architecture: amd64
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up QEMU for ARM
         uses: docker/setup-qemu-action@v3
 
-      - name: Login to GHCR
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -61,6 +61,9 @@ jobs:
       - name: Configure Git for private repo
         run: |
           git config --global url."https://${{ secrets.GHCR_TOKEN }}:@github.com/".insteadOf "https://github.com/"
+
+      - name: Show build info
+        run: echo "Building for ${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}"
 
       - name: Prepare Docker source
         shell: bash
@@ -89,16 +92,16 @@ jobs:
 
       - name: Build & push docker container
         env:
-          Pixylights_DOCKER_TAG: ghcr.io/pixylights-dev/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
+          PIXY_DOCKER_TAG: ghcr.io/pixylights-dev/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
         run: |
           docker build \
             --pull \
-            -t ${{ env.Pixylights_DOCKER_TAG }} \
+            -t ${{ env.PIXY_DOCKER_TAG }} \
             --platform linux/${{ matrix.architecture }} \
             --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
             -f ${{ env.DOCKER_TOOL }} .
 
-          docker push ${{ env.Pixylights_DOCKER_TAG }}
+          docker push ${{ env.PIXY_DOCKER_TAG }}
 
   mac_builds:
     name: macOS Builds
@@ -108,12 +111,14 @@ jobs:
         architecture: [x86_64, arm64]
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Show build info
+        run: echo "Building HyperHDR macOS installer for ${{ matrix.architecture }}"
 
       - name: Build macOS installer
         shell: bash
         run: |
           ARCH="${{ matrix.architecture }}"
-          echo "Building HyperHDR macOS installer for $ARCH..."
           ./buildMac.sh "$ARCH"
