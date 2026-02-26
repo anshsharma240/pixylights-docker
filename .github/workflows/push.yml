@@ -72,6 +72,7 @@ jobs:
 
       - name: Make build scripts executable
         run: chmod +x buildDebian buildFedora buildArch
+        chmod +x scripts/build.sh
 
       - name: Build & push docker container
         env:
@@ -91,3 +92,4 @@ jobs:
             -f ${{ env.DOCKER_TOOL }} .
 
           docker push ${{ env.PIXY_DOCKER_TAG }}
+
