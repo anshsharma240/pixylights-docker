@@ -45,22 +45,23 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-     
+
       - name: Prepare docker source
         shell: bash
         run: |
           # DOCKER SOURCE
           if [ "${{ matrix.architecture }}" = "arm64" ] && [ "${{ matrix.distroVersion }}" = "trixie" ]; then
-            echo "FINAL_DOCKER_SOURCE=arm64v8/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV ## moderm Rpi OS (arm64) ##
+            echo "FINAL_DOCKER_SOURCE=arm64v8/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV
           elif [ "${{ matrix.architecture }}" = "armhf" ] && [ "${{ matrix.distroVersion }}" = "trixie" ]; then
-            echo "FINAL_DOCKER_SOURCE=arm32v7/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV ## moderm Rpi OS (armhf) ##
+            echo "FINAL_DOCKER_SOURCE=arm32v7/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV
           elif [ "${{ matrix.architecture }}" = "arm64" ]; then
-            echo "FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}" >> $GITHUB_ENV ## older Rpi OS (arm64) ##
+            echo "FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}" >> $GITHUB_ENV
           elif [ "${{ matrix.architecture }}" = "armhf" ]; then
-            echo "FINAL_DOCKER_SOURCE=balenalib/raspberry-pi:${{ matrix.distroVersion }}" >> $GITHUB_ENV ## older Rpi OS (armhf) ##
+            echo "FINAL_DOCKER_SOURCE=balenalib/raspberry-pi:${{ matrix.distroVersion }}" >> $GITHUB_ENV
           else
-            echo "FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}" >> $GITHUB_ENV ## DEFAULT ##
+            echo "FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}" >> $GITHUB_ENV
           fi
+
           # TOOLKIT
           if [ "${{ matrix.distroName }}" = "fedora" ]; then
             echo "DOCKER_TOOL=buildFedora" >> $GITHUB_ENV
@@ -70,20 +71,30 @@ jobs:
             echo "DOCKER_TOOL=buildDebian" >> $GITHUB_ENV
           fi
 
+      - name: Make build scripts executable
+        run: chmod +x buildDebian buildFedora buildArch
+
+      - name: Debug environment variables
+        run: |
+          echo "DOCKER_TOOL=${{ env.DOCKER_TOOL }}"
+          echo "FINAL_DOCKER_SOURCE=${{ env.FINAL_DOCKER_SOURCE }}"
+
       - name: Build & push docker container
         env:
           Pixylights_DOCKER_TAG: ghcr.io/pixylights-dev/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
         run: |
           docker build \
-          -t ${{ env.Pixylights_DOCKER_TAG }} \
-          --platform linux/${{ matrix.architecture }} \
-          --label maintainer="Pixylights" \
-          --label org.opencontainers.image.title="${{ matrix.distroName }} (${{ matrix.distroVersion }})" \
-          --label org.opencontainers.image.description="Pixylights build environment" \
-          --label org.opencontainers.image.url="https://pixylights.eu" \
-          --label org.opencontainers.image.source="${{ github.server_url }}/${{ github.repository }}" \
-          --label org.opencontainers.image.vendor="Pixylights" \
-          --label org.opencontainers.image.licenses="MIT" \
-          --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
-          -f ${{ env.DOCKER_TOOL }} .
+            --pull \
+            -t ${{ env.Pixylights_DOCKER_TAG }} \
+            --platform linux/${{ matrix.architecture }} \
+            --label maintainer="Pixylights" \
+            --label org.opencontainers.image.title="${{ matrix.distroName }} (${{ matrix.distroVersion }})" \
+            --label org.opencontainers.image.description="Pixylights build environment" \
+            --label org.opencontainers.image.url="https://pixylights.eu" \
+            --label org.opencontainers.image.source="${{ github.server_url }}/${{ github.repository }}" \
+            --label org.opencontainers.image.vendor="Pixylights" \
+            --label org.opencontainers.image.licenses="MIT" \
+            --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
+            -f ${{ env.DOCKER_TOOL }} .
+
           docker push ${{ env.Pixylights_DOCKER_TAG }}
