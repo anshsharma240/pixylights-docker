@@ -70,9 +70,8 @@ jobs:
           echo "FINAL_DOCKER_SOURCE=$FINAL_DOCKER_SOURCE" >> $GITHUB_ENV
           echo "DOCKER_TOOL=$DOCKER_TOOL" >> $GITHUB_ENV
 
-      - name: Make build scripts executable
-        run: chmod +x buildDebian buildFedora buildArch
-        chmod +x scripts/build.sh
+     - name: Make build scripts executable
+  run: chmod +x buildDebian buildFedora buildArch && chmod +x scripts/build.sh
 
       - name: Build & push docker container
         env:
@@ -92,4 +91,5 @@ jobs:
             -f ${{ env.DOCKER_TOOL }} .
 
           docker push ${{ env.PIXY_DOCKER_TAG }}
+
 
