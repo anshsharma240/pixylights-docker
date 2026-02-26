@@ -35,6 +35,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.6.0
@@ -87,3 +89,4 @@ jobs:
           --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
           -f ${{ env.DOCKER_TOOL }} .
           docker push ${{ env.PIXY_DOCKER_TAG }}
+
