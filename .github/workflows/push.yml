@@ -57,11 +57,11 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.PIXYLIGHTS_TOKEN }}
 
       - name: Configure Git for private repo
         run: |
-          git config --global url."https://${{ secrets.GHCR_TOKEN }}:@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${{ secrets.PIXYLIGHTS_TOKEN }}:@github.com/".insteadOf "https://github.com/"
 
       - name: Show build info
         run: echo "Building Pixylights Linux image for ${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}"
