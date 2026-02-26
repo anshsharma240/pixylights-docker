@@ -6,7 +6,7 @@ on:
 jobs:
   linux_builds:
     name: Linux: ${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     permissions:
       packages: write
       contents: read
@@ -56,29 +56,29 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Configure Git for private repo
         run: |
-          git config --global url."https://${{ secrets.GITHUB_TOKEN }}:@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://${{ secrets.GHCR_TOKEN }}:@github.com/".insteadOf "https://github.com/"
 
       - name: Prepare Docker source
         shell: bash
         run: |
           # ARM vs AMD
-          if [[ "${{ matrix.architecture }}" == arm64* ]] || [[ "${{ matrix.architecture }}" == armhf* ]]; then
-              export FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}
+          if [[ "${{ matrix.architecture }}" == "arm64" ]] || [[ "${{ matrix.architecture }}" == "armhf" ]]; then
+              FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}
           else
-              export FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}
+              FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}
           fi
 
           # Determine build script
-          if [[ "${{ matrix.distroName }}" == fedora ]]; then
-              export DOCKER_TOOL=buildFedora
-          elif [[ "${{ matrix.distroName }}" == archlinux ]]; then
-              export DOCKER_TOOL=buildArch
+          if [[ "${{ matrix.distroName }}" == "fedora" ]]; then
+              DOCKER_TOOL=buildFedora
+          elif [[ "${{ matrix.distroName }}" == "archlinux" ]]; then
+              DOCKER_TOOL=buildArch
           else
-              export DOCKER_TOOL=buildDebian
+              DOCKER_TOOL=buildDebian
           fi
 
           echo "FINAL_DOCKER_SOURCE=$FINAL_DOCKER_SOURCE" >> $GITHUB_ENV
@@ -114,6 +114,6 @@ jobs:
       - name: Build macOS installer
         shell: bash
         run: |
-          ARCH=${{ matrix.architecture }}
+          ARCH="${{ matrix.architecture }}"
           echo "Building HyperHDR macOS installer for $ARCH..."
-          ./buildMac.sh $ARCH
+          ./buildMac.sh "$ARCH"
