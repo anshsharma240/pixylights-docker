@@ -11,11 +11,10 @@ jobs:
       packages: write
 
     strategy:
-      fail-fast: false
       matrix:
         distroName: [debian]
         distroVersion: [bullseye, bookworm, trixie]
-        architecture: [amd64, armhf, arm64]
+        architecture: [amd64, armhf, arm64]        
         include:
           - distroName: ubuntu
             distroVersion: jammy
@@ -31,17 +30,17 @@ jobs:
             architecture: amd64
           - distroName: archlinux
             distroVersion: latest
-            architecture: amd64
+            architecture: amd64         
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.PIXYLIGHTS_TOKEN }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.6.0
+        uses: docker/setup-qemu-action@v3
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -50,29 +49,26 @@ jobs:
           username: anshsharma240
           password: ${{ secrets.PIXYLIGHTS_TOKEN }}
 
-      - name: Make build scripts executable
-        run: chmod +x buildDebian buildFedora buildArch
-
       - name: Prepare docker source
         shell: bash
         run: |
-          # DOCKER SOURCE
-          if [ "${{ matrix.architecture }}" = "arm64" ] && [ "${{ matrix.distroVersion }}" = "trixie" ]; then
+          # Select base image for Raspberry Pi builds
+          if [[ "${{ matrix.architecture }}" == "arm64" && "${{ matrix.distroVersion }}" == "trixie" ]]; then
             echo "FINAL_DOCKER_SOURCE=arm64v8/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV
-          elif [ "${{ matrix.architecture }}" = "armhf" ] && [ "${{ matrix.distroVersion }}" = "trixie" ]; then
+          elif [[ "${{ matrix.architecture }}" == "armhf" && "${{ matrix.distroVersion }}" == "trixie" ]]; then
             echo "FINAL_DOCKER_SOURCE=arm32v7/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV
-          elif [ "${{ matrix.architecture }}" = "arm64" ]; then
+          elif [[ "${{ matrix.architecture }}" == "arm64" ]]; then
             echo "FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}" >> $GITHUB_ENV
-          elif [ "${{ matrix.architecture }}" = "armhf" ]; then
+          elif [[ "${{ matrix.architecture }}" == "armhf" ]]; then
             echo "FINAL_DOCKER_SOURCE=balenalib/raspberry-pi:${{ matrix.distroVersion }}" >> $GITHUB_ENV
           else
             echo "FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}" >> $GITHUB_ENV
           fi
 
-          # TOOLKIT
-          if [ "${{ matrix.distroName }}" = "fedora" ]; then
+          # Select Dockerfile
+          if [[ "${{ matrix.distroName }}" == "fedora" ]]; then
             echo "DOCKER_TOOL=buildFedora" >> $GITHUB_ENV
-          elif [ "${{ matrix.distroName }}" = "archlinux" ]; then
+          elif [[ "${{ matrix.distroName }}" == "archlinux" ]]; then
             echo "DOCKER_TOOL=buildArch" >> $GITHUB_ENV
           else
             echo "DOCKER_TOOL=buildDebian" >> $GITHUB_ENV
@@ -83,16 +79,8 @@ jobs:
           PIXY_DOCKER_TAG: ghcr.io/anshsharma240/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
         run: |
           docker build \
+            --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
             -t ${{ env.PIXY_DOCKER_TAG }} \
             --platform linux/${{ matrix.architecture }} \
-            --label maintainer="Pixylights" \
-            --label org.opencontainers.image.title="${{ matrix.distroName }} (${{ matrix.distroVersion }})" \
-            --label org.opencontainers.image.description="Pixylights build environment" \
-            --label org.opencontainers.image.url="https://pixylights.eu" \
-            --label org.opencontainers.image.source="${{ github.server_url }}/${{ github.repository }}" \
-            --label org.opencontainers.image.vendor="Pixylights" \
-            --label org.opencontainers.image.licenses="MIT" \
-            --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
             -f ${{ env.DOCKER_TOOL }} .
-
           docker push ${{ env.PIXY_DOCKER_TAG }}
