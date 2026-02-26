@@ -1,4 +1,4 @@
-name: HyperHdr Docker Builder
+name: Pixylights Docker Builder
 
 on:
   push:
@@ -72,18 +72,18 @@ jobs:
 
       - name: Build & push docker container
         env:
-          HYPERHDR_DOCKER_TAG: ghcr.io/awawa-dev/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
+          Pixylights_DOCKER_TAG: ghcr.io/pixylights-dev/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
         run: |
           docker build \
-          -t ${{ env.HYPERHDR_DOCKER_TAG }} \
+          -t ${{ env.Pixylights_DOCKER_TAG }} \
           --platform linux/${{ matrix.architecture }} \
-          --label maintainer="HyperHDR" \
+          --label maintainer="Pixylights" \
           --label org.opencontainers.image.title="${{ matrix.distroName }} (${{ matrix.distroVersion }})" \
-          --label org.opencontainers.image.description="HyperHDR build environment" \
-          --label org.opencontainers.image.url="https://hyperhdr.eu" \
+          --label org.opencontainers.image.description="Pixylights build environment" \
+          --label org.opencontainers.image.url="https://pixylights.eu" \
           --label org.opencontainers.image.source="${{ github.server_url }}/${{ github.repository }}" \
-          --label org.opencontainers.image.vendor="HyperHDR" \
+          --label org.opencontainers.image.vendor="Pixylights" \
           --label org.opencontainers.image.licenses="MIT" \
           --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
           -f ${{ env.DOCKER_TOOL }} .
-          docker push ${{ env.HYPERHDR_DOCKER_TAG }}
+          docker push ${{ env.Pixylights_DOCKER_TAG }}

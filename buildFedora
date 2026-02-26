@@ -1,7 +1,7 @@
 ARG DOCKER_SOURCE
 FROM ${DOCKER_SOURCE}
 
-# install the packages required by HyperHDR
+# install the packages required by Pixylights
 
 RUN sudo dnf -y upgrade
 RUN sudo dnf -y install \

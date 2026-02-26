@@ -1,7 +1,7 @@
 ARG DOCKER_SOURCE
 FROM ${DOCKER_SOURCE}
 
-# install the packages required by HyperHDR
+# install the packages required by Pixylights
 ARG DOCKER_SOURCE
 RUN apt-get update
 RUN bash -c 'if [[ "${DOCKER_SOURCE}" == arm64* ]] || [[ "${DOCKER_SOURCE}" == arm32* ]]; then \
@@ -20,7 +20,7 @@ RUN bash -c 'if [[ "${DOCKER_SOURCE}" == arm64* ]] || [[ "${DOCKER_SOURCE}" == a
         echo "Skipping Raspberry Pi OS repository, docker source is ${DOCKER_SOURCE}"; \
     fi'
 
-# install the packages required by HyperHDR
+# install the packages required by Pixylights
 RUN apt-get upgrade -y
 RUN apt-get install -y \
     build-essential \
