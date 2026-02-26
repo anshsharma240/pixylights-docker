@@ -9,6 +9,7 @@ jobs:
     runs-on: ${{ startsWith(matrix.architecture, 'arm') && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     permissions:
       packages: write
+      contents: read  # needed for private repo access
 
     strategy:
       matrix:
@@ -35,6 +36,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.6.0
@@ -45,6 +48,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # NEW: Setup Git authentication for private repos
+      - name: Configure Git for private repo
+        run: |
+          git config --global url."https://${{ secrets.GITHUB_TOKEN }}:@github.com/".insteadOf "https://github.com/"
 
       - name: Prepare docker source
         shell: bash
