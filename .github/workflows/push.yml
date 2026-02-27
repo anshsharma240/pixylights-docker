@@ -34,41 +34,37 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.PIXYLIGHTS_TOKEN }}
+        uses: actions/checkout@v4.2.2
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v3.6.0
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: anshsharma240
-          password: ${{ secrets.PIXYLIGHTS_TOKEN }}
-
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+     
       - name: Prepare docker source
         shell: bash
         run: |
-          # Select base image for Raspberry Pi builds
-          if [[ "${{ matrix.architecture }}" == "arm64" && "${{ matrix.distroVersion }}" == "trixie" ]]; then
-            echo "FINAL_DOCKER_SOURCE=arm64v8/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV
-          elif [[ "${{ matrix.architecture }}" == "armhf" && "${{ matrix.distroVersion }}" == "trixie" ]]; then
-            echo "FINAL_DOCKER_SOURCE=arm32v7/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV
-          elif [[ "${{ matrix.architecture }}" == "arm64" ]]; then
-            echo "FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}" >> $GITHUB_ENV
-          elif [[ "${{ matrix.architecture }}" == "armhf" ]]; then
-            echo "FINAL_DOCKER_SOURCE=balenalib/raspberry-pi:${{ matrix.distroVersion }}" >> $GITHUB_ENV
+          # DOCKER SOURCE
+          if [ "${{ matrix.architecture }}" = "arm64" ] && [ "${{ matrix.distroVersion }}" = "trixie" ]; then
+            echo "FINAL_DOCKER_SOURCE=arm64v8/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV ## moderm Rpi OS (arm64) ##
+          elif [ "${{ matrix.architecture }}" = "armhf" ] && [ "${{ matrix.distroVersion }}" = "trixie" ]; then
+            echo "FINAL_DOCKER_SOURCE=arm32v7/debian:${{ matrix.distroVersion }}-slim" >> $GITHUB_ENV ## moderm Rpi OS (armhf) ##
+          elif [ "${{ matrix.architecture }}" = "arm64" ]; then
+            echo "FINAL_DOCKER_SOURCE=balenalib/raspberrypi3-64:${{ matrix.distroVersion }}" >> $GITHUB_ENV ## older Rpi OS (arm64) ##
+          elif [ "${{ matrix.architecture }}" = "armhf" ]; then
+            echo "FINAL_DOCKER_SOURCE=balenalib/raspberry-pi:${{ matrix.distroVersion }}" >> $GITHUB_ENV ## older Rpi OS (armhf) ##
           else
-            echo "FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}" >> $GITHUB_ENV
+            echo "FINAL_DOCKER_SOURCE=${{ matrix.distroName }}:${{ matrix.distroVersion }}" >> $GITHUB_ENV ## DEFAULT ##
           fi
-
-          # Select Dockerfile
-          if [[ "${{ matrix.distroName }}" == "fedora" ]]; then
+          # TOOLKIT
+          if [ "${{ matrix.distroName }}" = "fedora" ]; then
             echo "DOCKER_TOOL=buildFedora" >> $GITHUB_ENV
-          elif [[ "${{ matrix.distroName }}" == "archlinux" ]]; then
+          elif [ "${{ matrix.distroName }}" = "archlinux" ]; then
             echo "DOCKER_TOOL=buildArch" >> $GITHUB_ENV
           else
             echo "DOCKER_TOOL=buildDebian" >> $GITHUB_ENV
@@ -76,11 +72,18 @@ jobs:
 
       - name: Build & push docker container
         env:
-          PIXY_DOCKER_TAG: ghcr.io/anshsharma240/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
+          PIXYLIGHTS_DOCKER_TAG: ghcr.io/anshsharma240/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
         run: |
           docker build \
-            --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
-            -t ${{ env.PIXY_DOCKER_TAG }} \
-            --platform linux/${{ matrix.architecture }} \
-            -f ${{ env.DOCKER_TOOL }} .
-          docker push ${{ env.PIXY_DOCKER_TAG }}
+          -t ${{ env.PIXYLIGHTS_DOCKER_TAG }} \
+          --platform linux/${{ matrix.architecture }} \
+          --label maintainer="Pixylights" \
+          --label org.opencontainers.image.title="${{ matrix.distroName }} (${{ matrix.distroVersion }})" \
+          --label org.opencontainers.image.description="HyperHDR build environment" \
+          --label org.opencontainers.image.url="https://pixylights.com" \
+          --label org.opencontainers.image.source="${{ github.server_url }}/${{ github.repository }}" \
+          --label org.opencontainers.image.vendor="Pixylights" \
+          --label org.opencontainers.image.licenses="MIT" \
+          --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
+          -f ${{ env.DOCKER_TOOL }} .
+          docker push ${{ env.HYPERHDR_DOCKER_TAG }}
