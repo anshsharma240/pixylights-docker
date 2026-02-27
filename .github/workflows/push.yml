@@ -86,4 +86,4 @@ jobs:
           --label org.opencontainers.image.licenses="MIT" \
           --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
           -f ${{ env.DOCKER_TOOL }} .
-          docker push ${{ env.HYPERHDR_DOCKER_TAG }}
+          docker push ${{ env.PIXYLIGHTS_DOCKER_TAG }}
