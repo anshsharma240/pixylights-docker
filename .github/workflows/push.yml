@@ -1,7 +1,5 @@
 name: Pixylights Docker Builder
 
-on:
-  push:
   on:
   push:
   workflow_dispatch:
