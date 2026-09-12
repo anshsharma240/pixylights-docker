@@ -75,7 +75,7 @@ jobs:
           PIXYLIGHTS_DOCKER_TAG: ghcr.io/anshsharma240/${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
         run: |
           docker build \
-          -t ${{ env.PIXYIGHTS_DOCKER_TAG }} \
+          -t ${{ env.PIXYLIGHTS_DOCKER_TAG }} \
           --platform linux/${{ matrix.architecture }} \
           --label maintainer="Pixylights" \
           --label org.opencontainers.image.title="${{ matrix.distroName }} (${{ matrix.distroVersion }})" \
@@ -86,4 +86,4 @@ jobs:
           --label org.opencontainers.image.licenses="MIT" \
           --build-arg DOCKER_SOURCE="${{ env.FINAL_DOCKER_SOURCE }}" \
           -f ${{ env.DOCKER_TOOL }} .
-          docker push ${{ env.HPIXYLIGHTS_DOCKER_TAG }}
+          docker push ${{ env.PIXYLIGHTS_DOCKER_TAG }}
