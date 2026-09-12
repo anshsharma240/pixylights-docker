@@ -2,12 +2,16 @@ name: Pixylights Docker Builder
 
 on:
   push:
+  on:
+  push:
+  workflow_dispatch:
 
 jobs:
   DevelopmentDockerBuilder:
     name: ${{ matrix.architecture }}/${{ matrix.distroName }}:${{ matrix.distroVersion }}
     runs-on: ${{ startsWith(matrix.architecture, 'arm') && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     permissions:
+    contents: read
       packages: write
 
     strategy:
